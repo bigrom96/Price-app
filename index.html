@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#10b981">
-    <title>Сравнение цен v2.0</title>
+    <title>Сравнение цен v2.1</title>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -104,54 +104,179 @@
             color: #10b981;
             border-bottom: 3px solid #10b981;
         }
+        
+        .pulse {
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .strikethrough {
+            text-decoration: line-through;
+            opacity: 0.7;
+        }
     </style>
 </head>
 <body class="bg-gray-50">
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useMemo } = React;
+        const { useState, useEffect, useMemo, useCallback, memo } = React;
 
         const INITIAL_PRODUCTS = [
-  {"id": "p0", "name": "Куриное филе", "category": "Белок", "note": "алель, кус в кус", "unit": "кг"},
-  {"id": "p1", "name": "Скумбрия (свежемороженая)", "category": "Белок", "note": "", "unit": "кг"},
-  {"id": "p2", "name": "Тунец", "category": "Белок", "note": "в собственном соку (Консервы)", "unit": "кг"},
-  {"id": "p3", "name": "Говядина", "category": "Белок", "note": "мякоть задней ноги, огузок", "unit": "кг"},
-  {"id": "p4", "name": "Говяжья Вырезка (Филе-миньон)", "category": "Белок", "note": "находится внутри туши вдоль позвоночника", "unit": "кг"},
-  {"id": "p5", "name": "Яйца (Категория С0 или С1)", "category": "Белок", "note": "", "unit": "шт"},
-  {"id": "p6", "name": "Куриные сердечки", "category": "Белок", "note": "", "unit": "кг"},
-  {"id": "p7", "name": "Творог (Нежирный 2–5%)", "category": "Белок", "note": "по 7 пачек в неделю покупать", "unit": "пачек (200г)"},
-  {"id": "p8", "name": "Чечевица (Зеленая/Коричневая)", "category": "Крупы", "note": "на развес", "unit": "кг"},
-  {"id": "p9", "name": "Ячневая крупа / Перловка", "category": "Крупы", "note": "на развес", "unit": "кг"},
-  {"id": "p10", "name": "Гречка", "category": "Крупы", "note": "на развес", "unit": "кг"},
-  {"id": "p11", "name": "Овсянка (Геркулес)", "category": "Крупы", "note": "", "unit": "кг"},
-  {"id": "p12", "name": "Капуста белокочанная", "category": "Овощи", "note": "", "unit": "кг"},
-  {"id": "p13", "name": "Морковь", "category": "Овощи", "note": "", "unit": "кг"},
-  {"id": "p14", "name": "Свекла", "category": "Овощи", "note": "", "unit": "кг"},
-  {"id": "p15", "name": "Зелень (Петрушка/Укроп)", "category": "Овощи", "note": "", "unit": "кг"},
-  {"id": "p16", "name": "Квашенная капуста", "category": "Овощи", "note": "", "unit": "кг"},
-  {"id": "p17", "name": "Брокколи", "category": "Овощи", "note": "", "unit": "кг"},
-  {"id": "p18", "name": "Цветная капуста", "category": "Овощи", "note": "", "unit": "кг"},
-  {"id": "p19", "name": "Стручковая фасоль", "category": "Овощи", "note": "", "unit": "кг"},
-  {"id": "p20", "name": "Сливочное масло 82.5%", "category": "Жиры", "note": "НЕ НИЖЕ", "unit": "кг"},
-  {"id": "p21", "name": "Масло растительное", "category": "Жиры", "note": "Нерафинированное (с запахом) — для салатов. Рафинированное — капля для жарки.", "unit": "л"},
-  {"id": "p22", "name": "Масло оливковое", "category": "Жиры", "note": "", "unit": "л"},
-  {"id": "p23", "name": "Льняное масло", "category": "Жиры", "note": "", "unit": "л"},
-  {"id": "p24", "name": "Горчичное масло", "category": "Жиры", "note": "", "unit": "л"},
-  {"id": "p25", "name": "Куркума", "category": "Специи", "note": "", "unit": "г"},
-  {"id": "p26", "name": "Сухой чеснок", "category": "Специи", "note": "", "unit": "г"},
-  {"id": "p27", "name": "Черный перец", "category": "Специи", "note": "", "unit": "г"},
-  {"id": "p28", "name": "Горчица", "category": "Специи", "note": "Обычная, русская/дижонская", "unit": "г"},
-  {"id": "p29", "name": "Томатная паста", "category": "Специи", "note": "", "unit": "г"},
-  {"id": "p30", "name": "Яблоки", "category": "Фрукты", "note": "Семеренко/Гренни Смит", "unit": "кг"},
-  {"id": "p31", "name": "Лимон", "category": "Фрукты", "note": "", "unit": "кг"},
-  {"id": "p32", "name": "Киви", "category": "Фрукты", "note": "", "unit": "кг"}
-];
+            {"id": "p0", "name": "Куриное филе", "category": "Белок", "note": "алель, кус в кус", "unit": "кг"},
+            {"id": "p1", "name": "Скумбрия (свежемороженая)", "category": "Белок", "note": "", "unit": "кг"},
+            {"id": "p2", "name": "Тунец", "category": "Белок", "note": "в собственном соку (Консервы)", "unit": "кг"},
+            {"id": "p3", "name": "Говядина", "category": "Белок", "note": "мякоть задней ноги, огузок", "unit": "кг"},
+            {"id": "p4", "name": "Говяжья Вырезка (Филе-миньон)", "category": "Белок", "note": "находится внутри туши вдоль позвоночника", "unit": "кг"},
+            {"id": "p5", "name": "Яйца (Категория С0 или С1)", "category": "Белок", "note": "", "unit": "шт"},
+            {"id": "p6", "name": "Куриные сердечки", "category": "Белок", "note": "", "unit": "кг"},
+            {"id": "p7", "name": "Творог (Нежирный 2–5%)", "category": "Белок", "note": "по 7 пачек в неделю покупать", "unit": "пачек (200г)"},
+            {"id": "p8", "name": "Чечевица (Зеленая/Коричневая)", "category": "Крупы", "note": "на развес", "unit": "кг"},
+            {"id": "p9", "name": "Ячневая крупа / Перловка", "category": "Крупы", "note": "на развес", "unit": "кг"},
+            {"id": "p10", "name": "Гречка", "category": "Крупы", "note": "на развес", "unit": "кг"},
+            {"id": "p11", "name": "Овсянка (Геркулес)", "category": "Крупы", "note": "", "unit": "кг"},
+            {"id": "p12", "name": "Капуста белокочанная", "category": "Овощи", "note": "", "unit": "кг"},
+            {"id": "p13", "name": "Морковь", "category": "Овощи", "note": "", "unit": "кг"},
+            {"id": "p14", "name": "Свекла", "category": "Овощи", "note": "", "unit": "кг"},
+            {"id": "p15", "name": "Зелень (Петрушка/Укроп)", "category": "Овощи", "note": "", "unit": "кг"},
+            {"id": "p16", "name": "Квашенная капуста", "category": "Овощи", "note": "", "unit": "кг"},
+            {"id": "p17", "name": "Брокколи", "category": "Овощи", "note": "", "unit": "кг"},
+            {"id": "p18", "name": "Цветная капуста", "category": "Овощи", "note": "", "unit": "кг"},
+            {"id": "p19", "name": "Стручковая фасоль", "category": "Овощи", "note": "", "unit": "кг"},
+            {"id": "p20", "name": "Сливочное масло 82.5%", "category": "Жиры", "note": "НЕ НИЖЕ", "unit": "кг"},
+            {"id": "p21", "name": "Масло растительное", "category": "Жиры", "note": "Нерафинированное (с запахом) — для салатов. Рафинированное — капля для жарки.", "unit": "л"},
+            {"id": "p22", "name": "Масло оливковое", "category": "Жиры", "note": "", "unit": "л"},
+            {"id": "p23", "name": "Льняное масло", "category": "Жиры", "note": "", "unit": "л"},
+            {"id": "p24", "name": "Горчичное масло", "category": "Жиры", "note": "", "unit": "л"},
+            {"id": "p25", "name": "Куркума", "category": "Специи", "note": "", "unit": "г"},
+            {"id": "p26", "name": "Сухой чеснок", "category": "Специи", "note": "", "unit": "г"},
+            {"id": "p27", "name": "Черный перец", "category": "Специи", "note": "", "unit": "г"},
+            {"id": "p28", "name": "Горчица", "category": "Специи", "note": "Обычная, русская/дижонская", "unit": "г"},
+            {"id": "p29", "name": "Томатная паста", "category": "Специи", "note": "", "unit": "г"},
+            {"id": "p30", "name": "Яблоки", "category": "Фрукты", "note": "Семеренко/Гренни Смит", "unit": "кг"},
+            {"id": "p31", "name": "Лимон", "category": "Фрукты", "note": "", "unit": "кг"},
+            {"id": "p32", "name": "Киви", "category": "Фрукты", "note": "", "unit": "кг"}
+        ];
 
         const INITIAL_STORES = [
             {id: 'store1', name: 'Магазин', icon: '🏪'},
             {id: 'store2', name: 'Рынок', icon: '🛒'}
         ];
+
+        const STORE_ICONS = ['🏪', '🛒', '🏬', '🏢', '🏭', '🏛️', '🎪', '⛪', '🕌', '🏰', '🛍️', '🛒', '🥦', '🍗', '🥩', '🥚', '🥛', '🍞'];
+
+        const ProductCard = memo(({ product, stores, priceData, quantity, isPurchased, updatePrice, updateQuantity, togglePurchased, deleteProduct }) => {
+            const [localPrice, setLocalPrice] = useState({});
+            const [localQuantity, setLocalQuantity] = useState('');
+            
+            useEffect(() => {
+                if (quantity !== localQuantity) {
+                    setLocalQuantity(quantity);
+                }
+            }, [quantity]);
+
+            useEffect(() => {
+                const newLocalPrice = {};
+                stores.forEach(store => {
+                    newLocalPrice[store.id] = priceData[store.id] || '';
+                });
+                setLocalPrice(newLocalPrice);
+            }, [priceData, stores]);
+
+            const handlePriceChange = (storeId, value) => {
+                setLocalPrice(prev => ({ ...prev, [storeId]: value }));
+                updatePrice(product.id, storeId, value);
+            };
+
+            const handleQuantityChange = (value) => {
+                setLocalQuantity(value);
+                updateQuantity(product.id, value);
+            };
+
+            let bestStoreId = null;
+            let lowestPrice = Infinity;
+
+            stores.forEach(store => {
+                const price = priceData[store.id];
+                if (price && localQuantity && price < lowestPrice) {
+                    lowestPrice = price;
+                    bestStoreId = store.id;
+                }
+            });
+
+            const isCustom = product.id.startsWith('custom_');
+
+            return (
+                <div className={`bg-white rounded-lg p-4 shadow-sm border-2 ${isPurchased ? 'border-green-500 bg-green-50 strikethrough' : 'border-gray-200'}`}>
+                    <div className="flex items-start justify-between mb-2">
+                        <div className="flex-1">
+                            <h3 className="font-semibold text-gray-900 text-lg">{product.name}</h3>
+                            {product.note && <p className="text-sm text-gray-600 mt-1">{product.note}</p>}
+                        </div>
+                        <div className="flex items-center gap-2 ml-2">
+                            {isCustom && (
+                                <button onClick={() => deleteProduct(product.id)} className="text-red-500 font-bold text-xl hover:text-red-700">×</button>
+                            )}
+                            <input 
+                                type="checkbox" 
+                                checked={isPurchased} 
+                                onChange={() => togglePurchased(product.id)} 
+                                className="custom-checkbox hover:border-green-400" 
+                            />
+                        </div>
+                    </div>
+
+                    <div className="mb-3">
+                        <label className="block text-xs font-medium text-gray-600 mb-1">📦 Количество</label>
+                        <div className="flex items-center gap-2">
+                            <input
+                                type="number"
+                                inputMode="decimal"
+                                placeholder="0"
+                                value={localQuantity}
+                                onChange={(e) => handleQuantityChange(e.target.value)}
+                                onBlur={(e) => handleQuantityChange(e.target.value)}
+                                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-base focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            />
+                            <span className="text-sm font-medium text-gray-600 min-w-[60px]">{product.unit}</span>
+                        </div>
+                    </div>
+
+                    <div className="grid gap-3" style={{gridTemplateColumns: `repeat(${stores.length}, 1fr)`}}>
+                        {stores.map(store => {
+                            const price = localPrice[store.id] || '';
+                            const total = price && localQuantity ? (price * localQuantity).toFixed(0) : '—';
+                            const isBest = bestStoreId === store.id && localQuantity > 0;
+
+                            return (
+                                <div key={store.id} className={`${isBest ? 'ring-2 ring-green-500 rounded-lg p-2 bg-green-50' : ''}`}>
+                                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                                        {store.icon} {store.name}
+                                    </label>
+                                    <input
+                                        type="number"
+                                        inputMode="decimal"
+                                        placeholder="Цена"
+                                        value={price}
+                                        onChange={(e) => handlePriceChange(store.id, e.target.value)}
+                                        onBlur={(e) => handlePriceChange(store.id, e.target.value)}
+                                        className="w-full px-2 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    />
+                                    <p className="text-xs text-gray-500 mt-1">
+                                        Итого: <span className="font-semibold">{total} ₸</span>
+                                    </p>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            );
+        });
 
         function App() {
             const [activeTab, setActiveTab] = useState('compare');
@@ -165,6 +290,8 @@
             
             const [showAddProduct, setShowAddProduct] = useState(false);
             const [showAddStore, setShowAddStore] = useState(false);
+            const [showStats, setShowStats] = useState(false);
+            const [showCopyModal, setShowCopyModal] = useState(false);
             
             const [newProduct, setNewProduct] = useState({
                 name: '', category: 'Белок', note: '', unit: 'кг'
@@ -172,6 +299,8 @@
             const [newStore, setNewStore] = useState({
                 name: '', icon: '🏬'
             });
+            const [copyFromStore, setCopyFromStore] = useState('');
+            const [copyToStore, setCopyToStore] = useState('');
 
             useEffect(() => {
                 const savedProducts = localStorage.getItem('priceApp_products_v2');
@@ -193,26 +322,30 @@
                 setExpandedCategories(categories);
             }, []);
 
-            useEffect(() => {
-                if (products.length > 0) localStorage.setItem('priceApp_products_v2', JSON.stringify(products));
-            }, [products]);
-            useEffect(() => {
-                if (stores.length > 0) localStorage.setItem('priceApp_stores_v2', JSON.stringify(stores));
-            }, [stores]);
-            useEffect(() => {
-                localStorage.setItem('priceApp_prices_v2', JSON.stringify(prices));
-            }, [prices]);
-            useEffect(() => {
-                localStorage.setItem('priceApp_quantities_v2', JSON.stringify(quantities));
-            }, [quantities]);
-            useEffect(() => {
-                localStorage.setItem('priceApp_purchased_v2', JSON.stringify(purchased));
-            }, [purchased]);
-            useEffect(() => {
-                localStorage.setItem('priceApp_history_v2', JSON.stringify(history));
-            }, [history]);
+            const saveToLocalStorage = useCallback((key, data) => {
+                localStorage.setItem(key, JSON.stringify(data));
+            }, []);
 
-            const updatePrice = (productId, storeId, value) => {
+            useEffect(() => {
+                saveToLocalStorage('priceApp_products_v2', products);
+            }, [products, saveToLocalStorage]);
+            useEffect(() => {
+                saveToLocalStorage('priceApp_stores_v2', stores);
+            }, [stores, saveToLocalStorage]);
+            useEffect(() => {
+                saveToLocalStorage('priceApp_prices_v2', prices);
+            }, [prices, saveToLocalStorage]);
+            useEffect(() => {
+                saveToLocalStorage('priceApp_quantities_v2', quantities);
+            }, [quantities, saveToLocalStorage]);
+            useEffect(() => {
+                saveToLocalStorage('priceApp_purchased_v2', purchased);
+            }, [purchased, saveToLocalStorage]);
+            useEffect(() => {
+                saveToLocalStorage('priceApp_history_v2', history);
+            }, [history, saveToLocalStorage]);
+
+            const updatePrice = useCallback((productId, storeId, value) => {
                 setPrices(prev => ({
                     ...prev,
                     [productId]: {
@@ -220,28 +353,28 @@
                         [storeId]: value === '' ? null : parseFloat(value)
                     }
                 }));
-            };
+            }, []);
 
-            const updateQuantity = (productId, value) => {
+            const updateQuantity = useCallback((productId, value) => {
                 setQuantities(prev => ({
                     ...prev,
                     [productId]: value === '' ? null : parseFloat(value)
                 }));
-            };
+            }, []);
 
-            const togglePurchased = (productId) => {
+            const togglePurchased = useCallback((productId) => {
                 setPurchased(prev => ({
                     ...prev,
                     [productId]: !prev[productId]
                 }));
-            };
+            }, []);
 
-            const toggleCategory = (category) => {
+            const toggleCategory = useCallback((category) => {
                 setExpandedCategories(prev => ({
                     ...prev,
                     [category]: !prev[category]
                 }));
-            };
+            }, []);
 
             const addProduct = () => {
                 if (!newProduct.name.trim()) {
@@ -254,7 +387,7 @@
                 setNewProduct({ name: '', category: 'Белок', note: '', unit: 'кг' });
             };
 
-            const deleteProduct = (productId) => {
+            const deleteProduct = useCallback((productId) => {
                 if (confirm('Удалить этот товар?')) {
                     setProducts(prev => prev.filter(p => p.id !== productId));
                     const newPrices = { ...prices };
@@ -267,7 +400,7 @@
                     delete newPurch[productId];
                     setPurchased(newPurch);
                 }
-            };
+            }, [prices, quantities, purchased]);
 
             const addStore = () => {
                 if (!newStore.name.trim()) {
@@ -284,7 +417,7 @@
                 setNewStore({ name: '', icon: '🏬' });
             };
 
-            const deleteStore = (storeId) => {
+            const deleteStore = useCallback((storeId) => {
                 if (stores.length <= 1) {
                     alert('Должен остаться хотя бы один магазин!');
                     return;
@@ -299,10 +432,12 @@
                     });
                     setPrices(newPrices);
                 }
-            };
+            }, [stores, prices]);
 
             const savePurchase = () => {
                 const totals = {};
+                const purchaseDetails = [];
+                
                 stores.forEach(store => {
                     totals[store.id] = 0;
                 });
@@ -311,23 +446,33 @@
                     const productPrices = prices[product.id] || {};
                     const quantity = quantities[product.id] || 0;
                     
-                    stores.forEach(store => {
-                        const price = productPrices[store.id];
-                        if (price && quantity) {
-                            totals[store.id] += price * quantity;
-                        }
-                    });
+                    if (quantity > 0) {
+                        stores.forEach(store => {
+                            const price = productPrices[store.id];
+                            if (price) {
+                                totals[store.id] += price * quantity;
+                                purchaseDetails.push({
+                                    product: product.name,
+                                    store: store.name,
+                                    price,
+                                    quantity,
+                                    total: price * quantity
+                                });
+                            }
+                        });
+                    }
                 });
 
                 const purchaseRecord = {
                     id: Date.now(),
                     date: new Date().toISOString(),
                     totals,
+                    details: purchaseDetails,
                     itemCount: Object.values(quantities).filter(q => q > 0).length
                 };
 
                 setHistory(prev => [purchaseRecord, ...prev]);
-                alert('✅ Покупка сохранена!');
+                alert('✅ Покупка сохранена в историю!');
             };
 
             const resetAll = () => {
@@ -338,10 +483,53 @@
                 }
             };
 
+            const copyPrices = () => {
+                if (!copyFromStore || !copyToStore || copyFromStore === copyToStore) {
+                    alert('Выберите разные магазины для копирования');
+                    return;
+                }
+
+                const newPrices = { ...prices };
+                products.forEach(product => {
+                    const productPrices = newPrices[product.id] || {};
+                    if (productPrices[copyFromStore] && !productPrices[copyToStore]) {
+                        newPrices[product.id] = {
+                            ...productPrices,
+                            [copyToStore]: productPrices[copyFromStore]
+                        };
+                    }
+                });
+
+                setPrices(newPrices);
+                setShowCopyModal(false);
+                setCopyFromStore('');
+                setCopyToStore('');
+                alert(`✅ Цены скопированы из ${stores.find(s => s.id === copyFromStore)?.name} в ${stores.find(s => s.id === copyToStore)?.name}`);
+            };
+
+            const markAllPurchased = () => {
+                if (confirm('Отметить ВСЕ товары как купленные?')) {
+                    const allPurchased = {};
+                    products.forEach(product => {
+                        allPurchased[product.id] = true;
+                    });
+                    setPurchased(allPurchased);
+                }
+            };
+
+            const clearAllPurchased = () => {
+                if (confirm('Снять отметки о покупке со ВСЕХ товаров?')) {
+                    setPurchased({});
+                }
+            };
+
             const calculations = useMemo(() => {
                 const totals = {};
+                const itemCounts = {};
+                
                 stores.forEach(store => {
                     totals[store.id] = 0;
+                    itemCounts[store.id] = 0;
                 });
 
                 products.forEach(product => {
@@ -352,6 +540,7 @@
                         const price = productPrices[store.id];
                         if (price && quantity) {
                             totals[store.id] += price * quantity;
+                            itemCounts[store.id]++;
                         }
                     });
                 });
@@ -359,10 +548,13 @@
                 const sortedStores = [...stores].sort((a, b) => totals[a.id] - totals[b.id]);
                 const bestStore = sortedStores[0];
                 const worstStore = sortedStores[sortedStores.length - 1];
-                const savings = bestStore && worstStore ? totals[worstStore.id] - totals[bestStore.id] : 0;
+                const savings = bestStore && worstStore && totals[worstStore.id] > 0 ? totals[worstStore.id] - totals[bestStore.id] : 0;
 
-                return { totals, bestStore, savings };
-            }, [prices, quantities, products, stores]);
+                const purchasedCount = Object.values(purchased).filter(v => v).length;
+                const totalProducts = products.length;
+
+                return { totals, bestStore, savings, itemCounts, purchasedCount, totalProducts };
+            }, [prices, quantities, products, stores, purchased]);
 
             const groupedProducts = useMemo(() => {
                 const groups = {};
@@ -373,86 +565,40 @@
                 return groups;
             }, [products]);
 
-            const ProductCard = ({ product }) => {
-                const productPrices = prices[product.id] || {};
-                const quantity = quantities[product.id] || '';
-                const isPurchased = purchased[product.id] || false;
-                const isCustom = product.id.startsWith('custom_');
-
-                let bestStoreId = null;
-                let lowestPrice = Infinity;
-
-                stores.forEach(store => {
-                    const price = productPrices[store.id];
-                    if (price && quantity && price < lowestPrice) {
-                        lowestPrice = price;
-                        bestStoreId = store.id;
+            const historyStats = useMemo(() => {
+                if (history.length === 0) return null;
+                
+                const monthlyTotals = {};
+                history.forEach(record => {
+                    const date = new Date(record.date);
+                    const monthYear = `${date.getMonth()+1}/${date.getFullYear()}`;
+                    
+                    if (!monthlyTotals[monthYear]) {
+                        monthlyTotals[monthYear] = { total: 0, count: 0 };
                     }
+                    
+                    Object.values(record.totals).forEach(total => {
+                        monthlyTotals[monthYear].total += total;
+                    });
+                    monthlyTotals[monthYear].count++;
                 });
-
-                return (
-                    <div className={`bg-white rounded-lg p-4 shadow-sm border-2 ${isPurchased ? 'border-green-500 bg-green-50' : 'border-gray-200'}`}>
-                        <div className="flex items-start justify-between mb-2">
-                            <div className="flex-1">
-                                <h3 className="font-semibold text-gray-900 text-lg">{product.name}</h3>
-                                {product.note && <p className="text-sm text-gray-600 mt-1">{product.note}</p>}
-                            </div>
-                            <div className="flex items-center gap-2 ml-2">
-                                {isCustom && (
-                                    <button onClick={() => deleteProduct(product.id)} className="text-red-500 font-bold text-xl">×</button>
-                                )}
-                                <input type="checkbox" checked={isPurchased} onChange={() => togglePurchased(product.id)} className="custom-checkbox" />
-                            </div>
-                        </div>
-
-                        <div className="mb-3">
-                            <label className="block text-xs font-medium text-gray-600 mb-1">📦 Количество</label>
-                            <div className="flex items-center gap-2">
-                                <input
-                                    type="number"
-                                    pattern="[0-9]*"
-                                    placeholder="0"
-                                    value={quantity}
-                                    onChange={(e) => updateQuantity(product.id, e.target.value)}
-                                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-base focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                />
-                                <span className="text-sm font-medium text-gray-600 min-w-[60px]">{product.unit}</span>
-                            </div>
-                        </div>
-
-                        <div className="grid gap-3" style={{gridTemplateColumns: `repeat(${stores.length}, 1fr)`}}>
-                            {stores.map(store => {
-                                const price = productPrices[store.id] || '';
-                                const total = price && quantity ? (price * quantity).toFixed(0) : '—';
-                                const isBest = bestStoreId === store.id && quantity > 0;
-
-                                return (
-                                    <div key={store.id} className={`${isBest ? 'ring-2 ring-green-500 rounded-lg p-2' : ''}`}>
-                                        <label className="block text-xs font-medium text-gray-600 mb-1">
-                                            {store.icon} {store.name}
-                                        </label>
-                                        <input
-                                            type="number"
-                                            pattern="[0-9]*"
-                                            placeholder="Цена"
-                                            value={price}
-                                            onChange={(e) => updatePrice(product.id, store.id, e.target.value)}
-                                            className="w-full px-2 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        />
-                                        <p className="text-xs text-gray-500 mt-1">
-                                            Итого: <span className="font-semibold">{total} ₸</span>
-                                        </p>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-                );
-            };
+                
+                return { monthlyTotals };
+            }, [history]);
 
             const HistoryTab = () => (
                 <div className="p-4 space-y-3">
-                    <h2 className="text-2xl font-bold mb-4">📊 История покупок</h2>
+                    <div className="flex justify-between items-center mb-4">
+                        <h2 className="text-2xl font-bold">📊 История покупок</h2>
+                        {history.length > 0 && (
+                            <button 
+                                onClick={() => setShowStats(true)}
+                                className="bg-blue-500 text-white px-4 py-2 rounded-lg font-semibold"
+                            >
+                                📈 Статистика
+                            </button>
+                        )}
+                    </div>
                     
                     {history.length === 0 ? (
                         <div className="text-center py-12 text-gray-500">
@@ -473,6 +619,16 @@
                                 minute: '2-digit' 
                             });
 
+                            let bestStoreId = null;
+                            let lowestTotal = Infinity;
+                            
+                            Object.entries(record.totals).forEach(([storeId, total]) => {
+                                if (total > 0 && total < lowestTotal) {
+                                    lowestTotal = total;
+                                    bestStoreId = storeId;
+                                }
+                            });
+
                             return (
                                 <div key={record.id} className="bg-white rounded-lg p-4 shadow-sm border-2 border-gray-200">
                                     <div className="flex justify-between items-center mb-3">
@@ -480,17 +636,29 @@
                                             <p className="font-semibold text-gray-900">{dateStr}</p>
                                             <p className="text-sm text-gray-600">{timeStr}</p>
                                         </div>
-                                        <p className="text-sm text-gray-600">{record.itemCount} товаров</p>
+                                        <div className="text-right">
+                                            <p className="text-sm text-gray-600">{record.itemCount} товаров</p>
+                                            {bestStoreId && (
+                                                <p className="text-xs text-green-600 font-medium">
+                                                    Лучшая цена: {stores.find(s => s.id === bestStoreId)?.icon} 
+                                                    {stores.find(s => s.id === bestStoreId)?.name}
+                                                </p>
+                                            )}
+                                        </div>
                                     </div>
                                     
                                     <div className="space-y-2">
                                         {stores.map(store => {
                                             const total = record.totals[store.id] || 0;
                                             if (total === 0) return null;
+                                            const isBest = bestStoreId === store.id;
                                             
                                             return (
-                                                <div key={store.id} className="flex justify-between items-center">
-                                                    <span className="text-sm">{store.icon} {store.name}</span>
+                                                <div key={store.id} className={`flex justify-between items-center p-2 rounded ${isBest ? 'bg-green-50' : ''}`}>
+                                                    <span className="text-sm">
+                                                        {store.icon} {store.name}
+                                                        {isBest && <span className="ml-2 text-xs text-green-600">✓ лучшая</span>}
+                                                    </span>
                                                     <span className="font-semibold">{total.toFixed(0)} ₸</span>
                                                 </div>
                                             );
@@ -504,9 +672,9 @@
             );
 
             return (
-                <div className="min-h-screen pb-32">
+                <div className="min-h-screen pb-40">
                     <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white sticky top-0 z-10 shadow-lg">
-                        <h1 className="text-2xl font-bold text-center pt-4 px-4">🛒 Сравнение цен v2.0</h1>
+                        <h1 className="text-2xl font-bold text-center pt-4 px-4">🛒 Сравнение цен v2.1</h1>
                         <p className="text-center text-sm opacity-90 pb-3">Умный помощник для покупок</p>
                         
                         <div className="flex bg-green-600">
@@ -528,14 +696,22 @@
                     {activeTab === 'compare' ? (
                         <>
                             <div className="bg-white p-4 shadow-md border-b-2 border-gray-200">
-                                <div className="grid gap-3" style={{gridTemplateColumns: `repeat(${Math.min(stores.length, 3)}, 1fr)`}}>
+                                <div className="grid gap-3" style={{gridTemplateColumns: `repeat(${Math.min(stores.length, 4)}, 1fr)`}}>
                                     {stores.map(store => {
                                         const total = calculations.totals[store.id];
                                         const isBest = calculations.bestStore?.id === store.id && calculations.savings > 0;
+                                        const itemCount = calculations.itemCounts[store.id];
                                         
                                         return (
-                                            <div key={store.id} className={`p-3 rounded-lg ${isBest ? 'bg-green-100 ring-2 ring-green-500' : 'bg-gray-100'}`}>
-                                                <p className="text-xs text-gray-600 font-medium">{store.icon} {store.name}</p>
+                                            <div key={store.id} className={`p-3 rounded-lg ${isBest ? 'bg-green-100 ring-2 ring-green-500 pulse' : 'bg-gray-100'}`}>
+                                                <div className="flex justify-between items-center">
+                                                    <p className="text-xs text-gray-600 font-medium">{store.icon} {store.name}</p>
+                                                    {itemCount > 0 && (
+                                                        <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                                                            {itemCount}
+                                                        </span>
+                                                    )}
+                                                </div>
                                                 <p className="text-xl font-bold text-gray-900">{total.toFixed(0)} ₸</p>
                                             </div>
                                         );
@@ -545,43 +721,90 @@
                                 {calculations.savings > 0 && (
                                     <div className="bg-green-50 border-2 border-green-500 rounded-lg p-3 text-center mt-3">
                                         <p className="text-sm text-gray-700">
-                                            Экономия при покупке в {calculations.bestStore.icon} {calculations.bestStore.name}
+                                            💰 Экономия в {calculations.bestStore.icon} {calculations.bestStore.name}
                                         </p>
                                         <p className="text-3xl font-bold text-green-600">{calculations.savings.toFixed(0)} ₸</p>
                                     </div>
                                 )}
+
+                                <div className="mt-3 flex items-center justify-between">
+                                    <div className="text-sm text-gray-600">
+                                        📝 Куплено: {calculations.purchasedCount}/{calculations.totalProducts}
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <button 
+                                            onClick={markAllPurchased}
+                                            className="text-xs bg-blue-100 text-blue-800 px-3 py-1 rounded-lg"
+                                        >
+                                            ✅ Все
+                                        </button>
+                                        <button 
+                                            onClick={clearAllPurchased}
+                                            className="text-xs bg-gray-100 text-gray-800 px-3 py-1 rounded-lg"
+                                        >
+                                            ❌ Сбросить
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
 
                             <div className="p-4 grid grid-cols-2 gap-3">
                                 <button
                                     onClick={() => setShowAddProduct(true)}
-                                    className="bg-blue-500 text-white py-3 rounded-lg font-semibold active:scale-95 transition-transform shadow-md"
+                                    className="bg-blue-500 text-white py-3 rounded-lg font-semibold active:scale-95 transition-transform shadow-md hover:bg-blue-600"
                                 >
                                     + Товар
                                 </button>
                                 <button
                                     onClick={() => setShowAddStore(true)}
-                                    className="bg-purple-500 text-white py-3 rounded-lg font-semibold active:scale-95 transition-transform shadow-md"
+                                    className="bg-purple-500 text-white py-3 rounded-lg font-semibold active:scale-95 transition-transform shadow-md hover:bg-purple-600"
                                 >
                                     + Магазин
                                 </button>
                             </div>
+
+                            {stores.length >= 2 && (
+                                <div className="px-4 mb-3">
+                                    <button
+                                        onClick={() => setShowCopyModal(true)}
+                                        className="w-full bg-yellow-500 text-white py-3 rounded-lg font-semibold active:scale-95 transition-transform shadow-md hover:bg-yellow-600"
+                                    >
+                                        📋 Копировать цены
+                                    </button>
+                                </div>
+                            )}
 
                             <div className="px-4 space-y-4 mb-4">
                                 {Object.entries(groupedProducts).map(([category, categoryProducts]) => (
                                     <div key={category}>
                                         <button
                                             onClick={() => toggleCategory(category)}
-                                            className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white p-3 rounded-lg font-semibold text-left flex items-center justify-between shadow-md active:scale-95 transition-transform"
+                                            className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white p-3 rounded-lg font-semibold text-left flex items-center justify-between shadow-md active:scale-95 transition-transform hover:from-blue-600 hover:to-blue-700"
                                         >
-                                            <span>{category} ({categoryProducts.length})</span>
+                                            <div className="flex items-center gap-2">
+                                                <span>{category}</span>
+                                                <span className="bg-white/30 px-2 py-1 rounded-full text-xs">
+                                                    {categoryProducts.length}
+                                                </span>
+                                            </div>
                                             <span className="text-2xl">{expandedCategories[category] ? '▼' : '▶'}</span>
                                         </button>
 
                                         {expandedCategories[category] && (
                                             <div className="mt-3 space-y-3">
                                                 {categoryProducts.map(product => (
-                                                    <ProductCard key={product.id} product={product} />
+                                                    <ProductCard 
+                                                        key={product.id} 
+                                                        product={product}
+                                                        stores={stores}
+                                                        priceData={prices[product.id] || {}}
+                                                        quantity={quantities[product.id] || ''}
+                                                        isPurchased={purchased[product.id] || false}
+                                                        updatePrice={updatePrice}
+                                                        updateQuantity={updateQuantity}
+                                                        togglePurchased={togglePurchased}
+                                                        deleteProduct={deleteProduct}
+                                                    />
                                                 ))}
                                             </div>
                                         )}
@@ -593,6 +816,7 @@
                         <HistoryTab />
                     )}
 
+                    {/* Модальное окно добавления товара */}
                     {showAddProduct && (
                         <div className="modal-overlay" onClick={() => setShowAddProduct(false)}>
                             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -603,13 +827,14 @@
                                             type="text"
                                             value={newProduct.name}
                                             onChange={(e) => setNewProduct({...newProduct, name: e.target.value})}
-                                            className="w-full px-4 py-3 border border-gray-300 rounded-lg"
+                                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                             placeholder="Название товара"
+                                            autoFocus
                                         />
                                         <select
                                             value={newProduct.category}
                                             onChange={(e) => setNewProduct({...newProduct, category: e.target.value})}
-                                            className="w-full px-4 py-3 border border-gray-300 rounded-lg"
+                                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                         >
                                             <option value="Белок">Белок</option>
                                             <option value="Крупы">Крупы</option>
@@ -617,30 +842,34 @@
                                             <option value="Жиры">Жиры</option>
                                             <option value="Специи">Специи</option>
                                             <option value="Фрукты">Фрукты</option>
+                                            <option value="Другое">Другое</option>
                                         </select>
                                         <select
                                             value={newProduct.unit}
                                             onChange={(e) => setNewProduct({...newProduct, unit: e.target.value})}
-                                            className="w-full px-4 py-3 border border-gray-300 rounded-lg"
+                                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                         >
                                             <option value="кг">кг</option>
                                             <option value="л">л</option>
                                             <option value="шт">шт</option>
                                             <option value="г">г</option>
+                                            <option value="упаковка">упаковка</option>
+                                            <option value="банка">банка</option>
+                                            <option value="пачка">пачка</option>
                                         </select>
-                                        <input
-                                            type="text"
+                                        <textarea
                                             value={newProduct.note}
                                             onChange={(e) => setNewProduct({...newProduct, note: e.target.value})}
-                                            className="w-full px-4 py-3 border border-gray-300 rounded-lg"
+                                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                             placeholder="Примечание (опционально)"
+                                            rows="2"
                                         />
                                     </div>
                                     <div className="flex gap-3 mt-6">
-                                        <button onClick={addProduct} className="flex-1 bg-green-500 text-white py-3 rounded-lg font-semibold">
+                                        <button onClick={addProduct} className="flex-1 bg-green-500 text-white py-3 rounded-lg font-semibold hover:bg-green-600">
                                             Добавить
                                         </button>
-                                        <button onClick={() => setShowAddProduct(false)} className="flex-1 bg-gray-300 text-gray-700 py-3 rounded-lg font-semibold">
+                                        <button onClick={() => setShowAddProduct(false)} className="flex-1 bg-gray-300 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-400">
                                             Отмена
                                         </button>
                                     </div>
@@ -649,6 +878,7 @@
                         </div>
                     )}
 
+                    {/* Модальное окно добавления магазина */}
                     {showAddStore && (
                         <div className="modal-overlay" onClick={() => setShowAddStore(false)}>
                             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -659,17 +889,18 @@
                                             type="text"
                                             value={newStore.name}
                                             onChange={(e) => setNewStore({...newStore, name: e.target.value})}
-                                            className="w-full px-4 py-3 border border-gray-300 rounded-lg"
+                                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                             placeholder="Название магазина"
+                                            autoFocus
                                         />
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-2">Выберите иконку</label>
-                                            <div className="grid grid-cols-5 gap-2">
-                                                {['🏪', '🛒', '🏬', '🏢', '🏭', '🏛️', '🎪', '⛪', '🕌', '🏰'].map(icon => (
+                                            <div className="grid grid-cols-5 gap-2 max-h-40 overflow-y-auto p-2">
+                                                {STORE_ICONS.map(icon => (
                                                     <button
                                                         key={icon}
                                                         onClick={() => setNewStore({...newStore, icon})}
-                                                        className={`text-3xl p-3 rounded-lg border-2 ${newStore.icon === icon ? 'border-blue-500 bg-blue-50' : 'border-gray-300'}`}
+                                                        className={`text-3xl p-3 rounded-lg border-2 hover:bg-gray-50 ${newStore.icon === icon ? 'border-blue-500 bg-blue-50' : 'border-gray-300'}`}
                                                     >
                                                         {icon}
                                                     </button>
@@ -678,10 +909,10 @@
                                         </div>
                                     </div>
                                     <div className="flex gap-3 mt-6">
-                                        <button onClick={addStore} className="flex-1 bg-green-500 text-white py-3 rounded-lg font-semibold">
+                                        <button onClick={addStore} className="flex-1 bg-green-500 text-white py-3 rounded-lg font-semibold hover:bg-green-600">
                                             Добавить
                                         </button>
-                                        <button onClick={() => setShowAddStore(false)} className="flex-1 bg-gray-300 text-gray-700 py-3 rounded-lg font-semibold">
+                                        <button onClick={() => setShowAddStore(false)} className="flex-1 bg-gray-300 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-400">
                                             Отмена
                                         </button>
                                     </div>
@@ -690,17 +921,129 @@
                         </div>
                     )}
 
+                    {/* Модальное окно копирования цен */}
+                    {showCopyModal && (
+                        <div className="modal-overlay" onClick={() => setShowCopyModal(false)}>
+                            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                                <div className="p-6">
+                                    <h2 className="text-2xl font-bold mb-4">📋 Копировать цены</h2>
+                                    <p className="text-gray-600 mb-4">Скопирует цены из одного магазина в другой (только пустые ячейки)</p>
+                                    
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">Копировать из:</label>
+                                            <select
+                                                value={copyFromStore}
+                                                onChange={(e) => setCopyFromStore(e.target.value)}
+                                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            >
+                                                <option value="">Выберите магазин</option>
+                                                {stores.map(store => (
+                                                    <option key={store.id} value={store.id}>
+                                                        {store.icon} {store.name}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">Копировать в:</label>
+                                            <select
+                                                value={copyToStore}
+                                                onChange={(e) => setCopyToStore(e.target.value)}
+                                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            >
+                                                <option value="">Выберите магазин</option>
+                                                {stores.map(store => (
+                                                    <option key={store.id} value={store.id}>
+                                                        {store.icon} {store.name}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="flex gap-3 mt-6">
+                                        <button onClick={copyPrices} className="flex-1 bg-green-500 text-white py-3 rounded-lg font-semibold hover:bg-green-600">
+                                            Копировать
+                                        </button>
+                                        <button onClick={() => setShowCopyModal(false)} className="flex-1 bg-gray-300 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-400">
+                                            Отмена
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Модальное окно статистики */}
+                    {showStats && (
+                        <div className="modal-overlay" onClick={() => setShowStats(false)}>
+                            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                                <div className="p-6">
+                                    <h2 className="text-2xl font-bold mb-4">📈 Статистика покупок</h2>
+                                    
+                                    {historyStats ? (
+                                        <div className="space-y-6">
+                                            <div>
+                                                <h3 className="font-semibold text-lg mb-3">📅 Средние расходы по месяцам:</h3>
+                                                {Object.entries(historyStats.monthlyTotals).map(([month, data]) => (
+                                                    <div key={month} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg mb-2">
+                                                        <span className="font-medium">{month}</span>
+                                                        <div className="text-right">
+                                                            <p className="font-bold text-lg">{(data.total / data.count).toFixed(0)} ₸</p>
+                                                            <p className="text-sm text-gray-600">{data.count} покупок</p>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            
+                                            <div className="border-t pt-4">
+                                                <h3 className="font-semibold text-lg mb-3">📊 Общая статистика:</h3>
+                                                <div className="grid grid-cols-2 gap-3">
+                                                    <div className="bg-blue-50 p-3 rounded-lg">
+                                                        <p className="text-sm text-gray-600">Всего покупок</p>
+                                                        <p className="text-2xl font-bold">{history.length}</p>
+                                                    </div>
+                                                    <div className="bg-green-50 p-3 rounded-lg">
+                                                        <p className="text-sm text-gray-600">Средний чек</p>
+                                                        <p className="text-2xl font-bold">
+                                                            {Math.round(history.reduce((sum, record) => {
+                                                                const storeTotal = Object.values(record.totals)[0] || 0;
+                                                                return sum + storeTotal;
+                                                            }, 0) / history.length) || 0} ₸
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <p className="text-gray-500 text-center py-8">Нет данных для статистики</p>
+                                    )}
+                                    
+                                    <button 
+                                        onClick={() => setShowStats(false)}
+                                        className="w-full mt-6 bg-gray-300 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-400"
+                                    >
+                                        Закрыть
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Нижняя панель действий */}
                     <div className="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-gray-200 p-4 space-y-2">
                         <button
                             onClick={savePurchase}
-                            className="w-full bg-green-500 text-white py-3 rounded-lg font-semibold active:scale-95 transition-transform shadow-lg"
+                            className="w-full bg-green-500 text-white py-3 rounded-lg font-semibold active:scale-95 transition-transform shadow-lg hover:bg-green-600"
                         >
                             💾 Сохранить покупку
                         </button>
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="grid grid-cols-3 gap-2">
                             <button
                                 onClick={resetAll}
-                                className="bg-orange-500 text-white py-3 rounded-lg font-semibold active:scale-95 transition-transform text-sm"
+                                className="bg-orange-500 text-white py-3 rounded-lg font-semibold active:scale-95 transition-transform text-sm hover:bg-orange-600"
                             >
                                 🔄 Сбросить цены
                             </button>
@@ -710,9 +1053,28 @@
                                         setStores(INITIAL_STORES);
                                     }
                                 }}
-                                className="bg-red-500 text-white py-3 rounded-lg font-semibold active:scale-95 transition-transform text-sm"
+                                className="bg-red-500 text-white py-3 rounded-lg font-semibold active:scale-95 transition-transform text-sm hover:bg-red-600"
                             >
                                 🏪 Сброс магазинов
+                            </button>
+                            <button
+                                onClick={() => {
+                                    if (confirm('Экспортировать все данные (можно импортировать позже)?')) {
+                                        const data = {
+                                            products, stores, prices, quantities, purchased, history
+                                        };
+                                        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                                        const url = URL.createObjectURL(blob);
+                                        const a = document.createElement('a');
+                                        a.href = url;
+                                        a.download = `price_comparison_${new Date().toISOString().split('T')[0]}.json`;
+                                        a.click();
+                                        URL.revokeObjectURL(url);
+                                    }
+                                }}
+                                className="bg-blue-500 text-white py-3 rounded-lg font-semibold active:scale-95 transition-transform text-sm hover:bg-blue-600"
+                            >
+                                📤 Экспорт
                             </button>
                         </div>
                     </div>
