@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#10b981">
+    <title>Сравнение цен - Продукты</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* iOS Safari fixes */
+        * {
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+        }
+        
+        body {
+            overscroll-behavior: none;
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        input[type="number"], input[type="text"] {
+            -webkit-appearance: none;
+            appearance: none;
+            border-radius: 8px;
+        }
+        
+        /* Убираем стрелки у input number */
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        
+        /* Кастомный чекбокс для iOS */
+        .custom-checkbox {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 24px;
+            height: 24px;
+            border: 2px solid #d1d5db;
+            border-radius: 6px;
+            background: white;
+            cursor: pointer;
+            position: relative;
+            flex-shrink: 0;
+        }
+        
+        .custom-checkbox:checked {
+            background: #10b981;
+            border-color: #10b981;
+        }
+        
+        .custom-checkbox:checked::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        
+        /* Плавная прокрутка */
+        .smooth-scroll {
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Модальное окно */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            max-width: 500px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
+
+        // Начальные данные товаров
+        const INITIAL_PRODUCTS = [
+  {
+    "id": "p0",
+    "name": "Куриное филе",
+    "category": "Белок",
+    "note": "алель, кус в кус",
+    "unit": "кг"
+  },
+  {
+    "id": "p1",
+    "name": "Скумбрия (свежемороженая)",
+    "category": "Белок",
+    "note": "",
+    "unit": "кг"
+  },
+  {
+    "id": "p2",
+    "name": "Тунец",
+    "category": "Белок",
+    "note": "в собственном соку (Консервы)",
+    "unit": "кг"
+  },
+  {
+    "id": "p3",
+    "name": "Говядина",
+    "category": "Белок",
+    "note": "мякоть задней ноги, огузок",
+    "unit": "кг"
+  },
+  {
+    "id": "p4",
+    "name": "Говяжья Вырезка (Филе-миньон)",
+    "category": "Белок",
+    "note": "находится внутри туши вдоль позвоночника",
+    "unit": "кг"
+  },
+  {
+    "id": "p5",
+    "name": "Яйца (Категория С0 или С1)",
+    "category": "Белок",
+    "note": "",
+    "unit": "шт"
+  },
+  {
+    "id": "p6",
+    "name": "Куриные сердечки",
+    "category": "Белок",
+    "note": "",
+    "unit": "кг"
+  },
+  {
+    "id": "p7",
+    "name": "Творог (Нежирный 2–5%)",
+    "category": "Белок",
+    "note": "по 7 пачек в неделю покупать",
+    "unit": "пачек (200г)"
+  },
+  {
+    "id": "p8",
+    "name": "Чечевица (Зеленая/Коричневая)",
+    "category": "Крупы",
+    "note": "на развес",
+    "unit": "кг"
+  },
+  {
+    "id": "p9",
+    "name": "Ячневая крупа / Перловка",
+    "category": "Крупы",
+    "note": "на развес",
+    "unit": "кг"
+  },
+  {
+    "id": "p10",
+    "name": "Гречка",
+    "category": "Крупы",
+    "note": "на развес",
+    "unit": "кг"
+  },
+  {
+    "id": "p11",
+    "name": "Овсянка (Геркулес)",
+    "category": "Крупы",
+    "note": "",
+    "unit": "кг"
+  },
+  {
+    "id": "p12",
+    "name": "Капуста белокочанная",
+    "category": "Овощи",
+    "note": "",
+    "unit": "кг"
+  },
+  {
+    "id": "p13",
+    "name": "Морковь",
+    "category": "Овощи",
+    "note": "",
+    "unit": "кг"
+  },
+  {
+    "id": "p14",
+    "name": "Свекла",
+    "category": "Овощи",
+    "note": "",
+    "unit": "кг"
+  },
+  {
+    "id": "p15",
+    "name": "Зелень (Петрушка/Укроп)",
+    "category": "Овощи",
+    "note": "",
+    "unit": "кг"
+  },
+  {
+    "id": "p16",
+    "name": "Квашенная капуста",
+    "category": "Овощи",
+    "note": "",
+    "unit": "кг"
+  },
+  {
+    "id": "p17",
+    "name": "Брокколи",
+    "category": "Овощи",
+    "note": "",
+    "unit": "кг"
+  },
+  {
+    "id": "p18",
+    "name": "Цветная капуста",
+    "category": "Овощи",
+    "note": "",
+    "unit": "кг"
+  },
+  {
+    "id": "p19",
+    "name": "Стручковая фасоль",
+    "category": "Овощи",
+    "note": "",
+    "unit": "кг"
+  },
+  {
+    "id": "p20",
+    "name": "Сливочное масло 82.5%",
+    "category": "Жиры",
+    "note": "НЕ НИЖЕ",
+    "unit": "кг"
+  },
+  {
+    "id": "p21",
+    "name": "Масло растительное",
+    "category": "Жиры",
+    "note": "Нерафинированное (с запахом) — для салатов. Рафинированное — капля для жарки.",
+    "unit": "л"
+  },
+  {
+    "id": "p22",
+    "name": "Масло оливковое",
+    "category": "Жиры",
+    "note": "",
+    "unit": "л"
+  },
+  {
+    "id": "p23",
+    "name": "Льняное масло",
+    "category": "Жиры",
+    "note": "",
+    "unit": "л"
+  },
+  {
+    "id": "p24",
+    "name": "Горчичное масло",
+    "category": "Жиры",
+    "note": "",
+    "unit": "л"
+  },
+  {
+    "id": "p25",
+    "name": "Куркума",
+    "category": "Специи",
+    "note": "",
+    "unit": "г"
+  },
+  {
+    "id": "p26",
+    "name": "Сухой чеснок",
+    "category": "Специи",
+    "note": "",
+    "unit": "г"
+  },
+  {
+    "id": "p27",
+    "name": "Черный перец",
+    "category": "Специи",
+    "note": "",
+    "unit": "г"
+  },
+  {
+    "id": "p28",
+    "name": "Горчица",
+    "category": "Специи",
+    "note": "Обычная, русская/дижонская",
+    "unit": "г"
+  },
+  {
+    "id": "p29",
+    "name": "Томатная паста",
+    "category": "Специи",
+    "note": "",
+    "unit": "г"
+  },
+  {
+    "id": "p30",
+    "name": "Яблоки",
+    "category": "Фрукты",
+    "note": "Семеренко/Гренни Смит",
+    "unit": "кг"
+  },
+  {
+    "id": "p31",
+    "name": "Лимон",
+    "category": "Фрукты",
+    "note": "",
+    "unit": "кг"
+  },
+  {
+    "id": "p32",
+    "name": "Киви",
+    "category": "Фрукты",
+    "note": "",
+    "unit": "кг"
+  }
+];
+
+        function App() {
+            // Состояния
+            const [products, setProducts] = useState([]);
+            const [prices, setPrices] = useState({});
+            const [quantities, setQuantities] = useState({});
+            const [purchased, setPurchased] = useState({});
+            const [expandedCategories, setExpandedCategories] = useState({});
+            const [showAddModal, setShowAddModal] = useState(false);
+            const [newProduct, setNewProduct] = useState({
+                name: '',
+                category: 'Белок',
+                note: '',
+                unit: 'кг'
+            });
+
+            // Загрузка из localStorage при старте
+            useEffect(() => {
+                const savedProducts = localStorage.getItem('priceApp_products');
+                const savedPrices = localStorage.getItem('priceApp_prices');
+                const savedQuantities = localStorage.getItem('priceApp_quantities');
+                const savedPurchased = localStorage.getItem('priceApp_purchased');
+                
+                setProducts(savedProducts ? JSON.parse(savedProducts) : INITIAL_PRODUCTS);
+                if (savedPrices) setPrices(JSON.parse(savedPrices));
+                if (savedQuantities) setQuantities(JSON.parse(savedQuantities));
+                if (savedPurchased) setPurchased(JSON.parse(savedPurchased));
+                
+                // Разворачиваем все категории по умолчанию
+                const categories = {};
+                INITIAL_PRODUCTS.forEach(p => {
+                    categories[p.category] = true;
+                });
+                setExpandedCategories(categories);
+            }, []);
+
+            // Сохранение в localStorage
+            useEffect(() => {
+                if (products.length > 0) {
+                    localStorage.setItem('priceApp_products', JSON.stringify(products));
+                }
+            }, [products]);
+
+            useEffect(() => {
+                localStorage.setItem('priceApp_prices', JSON.stringify(prices));
+            }, [prices]);
+
+            useEffect(() => {
+                localStorage.setItem('priceApp_quantities', JSON.stringify(quantities));
+            }, [quantities]);
+
+            useEffect(() => {
+                localStorage.setItem('priceApp_purchased', JSON.stringify(purchased));
+            }, [purchased]);
+
+            // Обработчики
+            const updatePrice = (productId, location, value) => {
+                setPrices(prev => ({
+                    ...prev,
+                    [productId]: {
+                        ...prev[productId],
+                        [location]: value === '' ? null : parseFloat(value)
+                    }
+                }));
+            };
+
+            const updateQuantity = (productId, value) => {
+                setQuantities(prev => ({
+                    ...prev,
+                    [productId]: value === '' ? null : parseFloat(value)
+                }));
+            };
+
+            const togglePurchased = (productId) => {
+                setPurchased(prev => ({
+                    ...prev,
+                    [productId]: !prev[productId]
+                }));
+            };
+
+            const toggleCategory = (category) => {
+                setExpandedCategories(prev => ({
+                    ...prev,
+                    [category]: !prev[category]
+                }));
+            };
+
+            const addNewProduct = () => {
+                if (!newProduct.name.trim()) {
+                    alert('Введите название товара');
+                    return;
+                }
+
+                const id = 'custom_' + Date.now();
+                setProducts(prev => [...prev, { ...newProduct, id }]);
+                setShowAddModal(false);
+                setNewProduct({
+                    name: '',
+                    category: 'Белок',
+                    note: '',
+                    unit: 'кг'
+                });
+            };
+
+            const deleteProduct = (productId) => {
+                if (confirm('Удалить этот товар?')) {
+                    setProducts(prev => prev.filter(p => p.id !== productId));
+                    setPrices(prev => {
+                        const newPrices = { ...prev };
+                        delete newPrices[productId];
+                        return newPrices;
+                    });
+                    setQuantities(prev => {
+                        const newQty = { ...prev };
+                        delete newQty[productId];
+                        return newQty;
+                    });
+                    setPurchased(prev => {
+                        const newPurch = { ...prev };
+                        delete newPurch[productId];
+                        return newPurch;
+                    });
+                }
+            };
+
+            const resetAll = () => {
+                if (confirm('Сбросить все цены, количества и отметки о покупках?')) {
+                    setPrices({});
+                    setQuantities({});
+                    setPurchased({});
+                }
+            };
+
+            const resetToDefault = () => {
+                if (confirm('Вернуть список товаров к изначальному? Все добавленные товары будут удалены.')) {
+                    setProducts(INITIAL_PRODUCTS);
+                    setPrices({});
+                    setQuantities({});
+                    setPurchased({});
+                }
+            };
+
+            // Расчёты
+            const calculations = useMemo(() => {
+                let shopTotal = 0;
+                let marketTotal = 0;
+
+                products.forEach(product => {
+                    const productPrices = prices[product.id] || {};
+                    const shopPrice = productPrices.shop;
+                    const marketPrice = productPrices.market;
+                    const quantity = quantities[product.id] || 0;
+                    
+                    const shopSum = shopPrice && quantity ? shopPrice * quantity : 0;
+                    const marketSum = marketPrice && quantity ? marketPrice * quantity : 0;
+                    
+                    shopTotal += shopSum;
+                    marketTotal += marketSum;
+                });
+
+                return {
+                    shopTotal,
+                    marketTotal,
+                    savings: Math.abs(shopTotal - marketTotal),
+                    betterOption: shopTotal < marketTotal ? 'shop' : 'market'
+                };
+            }, [prices, quantities, products]);
+
+            // Группировка по категориям
+            const groupedProducts = useMemo(() => {
+                const groups = {};
+                products.forEach(product => {
+                    if (!groups[product.category]) {
+                        groups[product.category] = [];
+                    }
+                    groups[product.category].push(product);
+                });
+                return groups;
+            }, [products]);
+
+            // Компонент карточки товара
+            const ProductCard = ({ product }) => {
+                const productPrices = prices[product.id] || {};
+                const shopPrice = productPrices.shop || '';
+                const marketPrice = productPrices.market || '';
+                const quantity = quantities[product.id] || '';
+                const isPurchased = purchased[product.id] || false;
+                const isCustom = product.id.startsWith('custom_');
+
+                const shopTotal = shopPrice && quantity ? (shopPrice * quantity).toFixed(0) : '—';
+                const marketTotal = marketPrice && quantity ? (marketPrice * quantity).toFixed(0) : '—';
+
+                let betterPrice = null;
+                if (shopPrice && marketPrice && quantity) {
+                    if (shopPrice < marketPrice) betterPrice = 'shop';
+                    else if (marketPrice < shopPrice) betterPrice = 'market';
+                }
+
+                return (
+                    <div className={`bg-white rounded-lg p-4 shadow-sm border-2 ${isPurchased ? 'border-green-500 bg-green-50' : 'border-gray-200'}`}>
+                        {/* Название товара */}
+                        <div className="flex items-start justify-between mb-2">
+                            <div className="flex-1">
+                                <h3 className="font-semibold text-gray-900 text-lg">{product.name}</h3>
+                                {product.note && (
+                                    <p className="text-sm text-gray-600 mt-1">{product.note}</p>
+                                )}
+                            </div>
+                            
+                            <div className="flex items-center gap-2 ml-2">
+                                {/* Кнопка удаления для кастомных товаров */}
+                                {isCustom && (
+                                    <button
+                                        onClick={() => deleteProduct(product.id)}
+                                        className="text-red-500 font-bold text-xl"
+                                    >
+                                        ×
+                                    </button>
+                                )}
+                                
+                                {/* Чекбокс */}
+                                <input
+                                    type="checkbox"
+                                    checked={isPurchased}
+                                    onChange={() => togglePurchased(product.id)}
+                                    className="custom-checkbox"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Количество */}
+                        <div className="mb-3">
+                            <label className="block text-xs font-medium text-gray-600 mb-1">
+                                📦 Количество
+                            </label>
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="number"
+                                    inputMode="decimal"
+                                    placeholder="0"
+                                    value={quantity}
+                                    onChange={(e) => updateQuantity(product.id, e.target.value)}
+                                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-base focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                />
+                                <span className="text-sm font-medium text-gray-600 min-w-[60px]">{product.unit}</span>
+                            </div>
+                        </div>
+
+                        {/* Ввод цен */}
+                        <div className="grid grid-cols-2 gap-3">
+                            {/* Магазин */}
+                            <div className={`${betterPrice === 'shop' ? 'ring-2 ring-green-500 rounded-lg p-2' : ''}`}>
+                                <label className="block text-xs font-medium text-gray-600 mb-1">
+                                    🏪 Магазин
+                                </label>
+                                <input
+                                    type="number"
+                                    inputMode="decimal"
+                                    placeholder="Цена"
+                                    value={shopPrice}
+                                    onChange={(e) => updatePrice(product.id, 'shop', e.target.value)}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-base focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                />
+                                <p className="text-xs text-gray-500 mt-1">
+                                    Итого: <span className="font-semibold">{shopTotal} ₸</span>
+                                </p>
+                            </div>
+
+                            {/* Рынок */}
+                            <div className={`${betterPrice === 'market' ? 'ring-2 ring-green-500 rounded-lg p-2' : ''}`}>
+                                <label className="block text-xs font-medium text-gray-600 mb-1">
+                                    🛒 Рынок
+                                </label>
+                                <input
+                                    type="number"
+                                    inputMode="decimal"
+                                    placeholder="Цена"
+                                    value={marketPrice}
+                                    onChange={(e) => updatePrice(product.id, 'market', e.target.value)}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-base focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                />
+                                <p className="text-xs text-gray-500 mt-1">
+                                    Итого: <span className="font-semibold">{marketTotal} ₸</span>
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Разница */}
+                        {betterPrice && (
+                            <div className="mt-2 text-center">
+                                <p className="text-sm font-medium text-green-600">
+                                    💰 Экономия {Math.abs(parseFloat(shopTotal) - parseFloat(marketTotal)).toFixed(0)} ₸ 
+                                    {betterPrice === 'shop' ? ' в магазине' : ' на рынке'}
+                                </p>
+                            </div>
+                        )}
+                    </div>
+                );
+            };
+
+            // Модальное окно добавления товара
+            const AddProductModal = () => (
+                <div className="modal-overlay" onClick={() => setShowAddModal(false)}>
+                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                        <div className="p-6">
+                            <h2 className="text-2xl font-bold mb-4">➕ Добавить товар</h2>
+                            
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Название товара *
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={newProduct.name}
+                                        onChange={(e) => setNewProduct({...newProduct, name: e.target.value})}
+                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg text-base focus:ring-2 focus:ring-blue-500"
+                                        placeholder="Например: Рис басмати"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Категория
+                                    </label>
+                                    <select
+                                        value={newProduct.category}
+                                        onChange={(e) => setNewProduct({...newProduct, category: e.target.value})}
+                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg text-base focus:ring-2 focus:ring-blue-500"
+                                    >
+                                        <option value="Белок">Белок</option>
+                                        <option value="Крупы">Крупы</option>
+                                        <option value="Овощи">Овощи</option>
+                                        <option value="Жиры">Жиры</option>
+                                        <option value="Специи">Специи</option>
+                                        <option value="Фрукты">Фрукты</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Единица измерения
+                                    </label>
+                                    <select
+                                        value={newProduct.unit}
+                                        onChange={(e) => setNewProduct({...newProduct, unit: e.target.value})}
+                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg text-base focus:ring-2 focus:ring-blue-500"
+                                    >
+                                        <option value="кг">кг</option>
+                                        <option value="л">л</option>
+                                        <option value="шт">шт</option>
+                                        <option value="г">г</option>
+                                        <option value="мл">мл</option>
+                                        <option value="упак">упак</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Примечание (опционально)
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={newProduct.note}
+                                        onChange={(e) => setNewProduct({...newProduct, note: e.target.value})}
+                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg text-base focus:ring-2 focus:ring-blue-500"
+                                        placeholder="Бренд, особенности..."
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="flex gap-3 mt-6">
+                                <button
+                                    onClick={addNewProduct}
+                                    className="flex-1 bg-green-500 text-white py-3 rounded-lg font-semibold active:scale-95 transition-transform"
+                                >
+                                    Добавить
+                                </button>
+                                <button
+                                    onClick={() => setShowAddModal(false)}
+                                    className="flex-1 bg-gray-300 text-gray-700 py-3 rounded-lg font-semibold active:scale-95 transition-transform"
+                                >
+                                    Отмена
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+
+            return (
+                <div className="min-h-screen pb-32">
+                    {/* Шапка */}
+                    <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white p-4 sticky top-0 z-10 shadow-lg">
+                        <h1 className="text-2xl font-bold text-center">🛒 Сравнение цен</h1>
+                        <p className="text-center text-sm opacity-90 mt-1">Магазин vs Рынок</p>
+                    </div>
+
+                    {/* Итоговая сводка */}
+                    <div className="bg-white p-4 shadow-md border-b-2 border-gray-200">
+                        <div className="grid grid-cols-2 gap-4 mb-3">
+                            <div className={`p-3 rounded-lg ${calculations.betterOption === 'shop' && calculations.savings > 0 ? 'bg-green-100 ring-2 ring-green-500' : 'bg-gray-100'}`}>
+                                <p className="text-xs text-gray-600 font-medium">🏪 Магазин</p>
+                                <p className="text-2xl font-bold text-gray-900">{calculations.shopTotal.toFixed(0)} ₸</p>
+                            </div>
+                            <div className={`p-3 rounded-lg ${calculations.betterOption === 'market' && calculations.savings > 0 ? 'bg-green-100 ring-2 ring-green-500' : 'bg-gray-100'}`}>
+                                <p className="text-xs text-gray-600 font-medium">🛒 Рынок</p>
+                                <p className="text-2xl font-bold text-gray-900">{calculations.marketTotal.toFixed(0)} ₸</p>
+                            </div>
+                        </div>
+                        
+                        {calculations.savings > 0 && (
+                            <div className="bg-green-50 border-2 border-green-500 rounded-lg p-3 text-center">
+                                <p className="text-sm text-gray-700">Экономия при покупке в {calculations.betterOption === 'shop' ? 'магазине' : 'на рынке'}</p>
+                                <p className="text-3xl font-bold text-green-600">{calculations.savings.toFixed(0)} ₸</p>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Кнопка добавить товар */}
+                    <div className="p-4">
+                        <button
+                            onClick={() => setShowAddModal(true)}
+                            className="w-full bg-blue-500 text-white py-3 rounded-lg font-semibold active:scale-95 transition-transform shadow-md flex items-center justify-center gap-2"
+                        >
+                            <span className="text-2xl">+</span>
+                            <span>Добавить товар</span>
+                        </button>
+                    </div>
+
+                    {/* Список товаров по категориям */}
+                    <div className="px-4 space-y-4">
+                        {Object.entries(groupedProducts).map(([category, categoryProducts]) => (
+                            <div key={category}>
+                                {/* Заголовок категории */}
+                                <button
+                                    onClick={() => toggleCategory(category)}
+                                    className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white p-3 rounded-lg font-semibold text-left flex items-center justify-between shadow-md active:scale-95 transition-transform"
+                                >
+                                    <span>{category} ({categoryProducts.length})</span>
+                                    <span className="text-2xl">{expandedCategories[category] ? '▼' : '▶'}</span>
+                                </button>
+
+                                {/* Товары в категории */}
+                                {expandedCategories[category] && (
+                                    <div className="mt-3 space-y-3">
+                                        {categoryProducts.map(product => (
+                                            <ProductCard key={product.id} product={product} />
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Модальное окно */}
+                    {showAddModal && <AddProductModal />}
+
+                    {/* Кнопки управления */}
+                    <div className="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-gray-200 p-4 space-y-2">
+                        <button
+                            onClick={resetAll}
+                            className="w-full bg-orange-500 text-white py-3 rounded-lg font-semibold active:scale-95 transition-transform shadow-lg"
+                        >
+                            🔄 Сбросить цены и количества
+                        </button>
+                        <button
+                            onClick={resetToDefault}
+                            className="w-full bg-red-500 text-white py-3 rounded-lg font-semibold active:scale-95 transition-transform shadow-lg"
+                        >
+                            ⚠️ Вернуть к начальному списку
+                        </button>
+                    </div>
+                </div>
+            );
+        }
+
+        // Рендер приложения
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
